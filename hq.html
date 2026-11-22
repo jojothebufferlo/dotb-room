@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DOTB HQ</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #f6f6f4; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
+    --accent: #2f6fde; --accent-ink: #ffffff; --tag: #fff1d6; --tag-ink: #7a4b00;
+    --okasan: #2f6fde; --bornjuicy: #c2410c; --agent: #6b6b66; --err: #b42318; --ok: #22a55a; --warn: #d08a00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --panel: #1e1e1c; --ink: #ececea; --muted: #9b9b95; --line: #2e2e2b;
+      --accent: #6c9cff; --accent-ink: #0d0d0c; --tag: #3a2c10; --tag-ink: #ffcf7a;
+      --okasan: #7aa6ff; --bornjuicy: #ff8f5a; --agent: #9b9b95; --err: #ff7b6e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 700; letter-spacing: .02em; }
+  .tabs { display: flex; gap: 4px; }
+  .tabs button { font: inherit; font-size: 14px; background: none; border: 1px solid transparent; color: var(--muted);
+    border-radius: 8px; padding: 5px 12px; cursor: pointer; transition: background .15s, color .15s; }
+  .tabs button:hover { color: var(--ink); background: var(--bg); }
+  .tabs button[aria-selected="true"] { color: var(--ink); background: var(--bg); border-color: var(--line); font-weight: 600; }
+  .tabs button .badge { display: inline-block; min-width: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px;
+    background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 700; text-align: center; }
+  .pill { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill.live::before { background: var(--ok); } .pill.down::before { background: var(--err); } .pill.warn::before { background: var(--warn); }
+  header .spacer { flex: 1; }
+  header .btn { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
+  header .btn:hover { color: var(--ink); border-color: var(--muted); }
+  .view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #engine-frame { flex: 1; width: 100%; border: 0; background: #0b0b0d; }
+  .loading { margin: 14vh auto 0; text-align: center; color: var(--muted); }
+  .loading .bar { width: 220px; height: 4px; background: var(--line); border-radius: 2px; margin: 12px auto 0; overflow: hidden; }
+  .loading .bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  main.room { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .wrap { max-width: 820px; margin: 0 auto; }
+  .msg { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .msg:last-child { border-bottom: 0; }
+  .meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 13px; }
+  .who { font-weight: 650; text-transform: capitalize; }
+  .who.okasan { color: var(--okasan); } .who.bornjuicy { color: var(--bornjuicy); }
+  .when { color: var(--muted); font-size: 12px; }
+  .tag { background: var(--tag); color: var(--tag-ink); font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 6px; }
+  .text { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
+  .text a { color: var(--accent); }
+  details.data summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  details.data pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; color: var(--muted); }
+  .day { text-align: center; color: var(--muted); font-size: 12px; margin: 14px 0 4px; }
+  footer { border-top: 1px solid var(--line); background: var(--panel); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .compose { max-width: 820px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
+  .compose select, .compose textarea, .compose button, .card input, .card button {
+    font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
+  .compose select { padding: 8px 6px; }
+  .compose textarea { flex: 1; min-width: 0; resize: none; padding: 8px 10px; max-height: 160px; }
+  .compose button, .card button { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); padding: 8px 14px; font-weight: 600; cursor: pointer; }
+  .compose button:hover, .card button:hover { filter: brightness(1.08); }
+  .compose button:active, .card button:active { transform: translateY(1px); }
+  .compose button:disabled { opacity: .5; cursor: default; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .hint { max-width: 820px; margin: 4px auto 0; font-size: 11px; color: var(--muted); }
+  .card { max-width: 380px; margin: 12vh auto 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+  .card h2 { margin: 0 0 6px; font-size: 18px; }
+  .card p { margin: 0 0 14px; color: var(--muted); }
+  .card form { display: flex; flex-direction: column; gap: 10px; }
+  .card input { padding: 10px 12px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .note.err { color: var(--err); }
+  [hidden] { display: none !important; }
+  @media (max-width: 560px) { header { padding: 8px 12px; } header h1 { font-size: 15px; } #me { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>DOTB HQ</h1>
+  <nav class="tabs" id="tabs" role="tablist" hidden>
+    <button role="tab" data-tab="engine" aria-selected="true">Engine</button>
+    <button role="tab" data-tab="room" aria-selected="false">Room<span class="badge" id="unread" hidden>0</span></button>
+  </nav>
+  <span class="spacer"></span>
+  <span id="pc" class="pill" title="The home PC answers engine requests">home PC</span>
+  <span id="status" class="pill">offline</span>
+  <span id="me" class="when"></span>
+  <button id="signout" class="btn" hidden>Sign out</button>
+</header>
+
+<div class="card" id="signin" hidden>
+  <h2>Sign in</h2>
+  <p>Type your email. We send you a link; open it on this device.</p>
+  <form id="signin-form">
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+    <button type="submit">Send link</button>
+  </form>
+  <div id="signin-note" class="note"></div>
+</div>
+<div class="card" id="notmember" hidden>
+  <h2>Not in HQ yet</h2>
+  <p>Ask Miso to add you.</p>
+  <div class="note" id="notmember-who"></div>
+</div>
+
+<section class="view" id="view-engine" hidden>
+  <div class="loading" id="engine-loading"><div id="engine-msg">Opening the engine…</div><div class="bar"><i id="engine-bar"></i></div></div>
+  <iframe id="engine-frame" title="Game Design Engine" hidden></iframe>
+</section>
+
+<section class="view" id="view-room" hidden>
+  <main class="room" id="roommain"><div class="wrap" id="list"></div></main>
+  <footer>
+    <form class="compose" id="compose">
+      <select id="to" aria-label="To">
+        <option value="room">Room</option><option value="dot">Dot</option><option value="miso">Miso</option><option value="all">All</option>
+      </select>
+      <textarea id="text" rows="1" placeholder="Message the room" aria-label="Message"></textarea>
+      <button id="send" type="submit">Send</button>
+    </form>
+    <div class="hint">Enter sends. Shift+Enter adds a line.</div>
+  </footer>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+<script>
+(() => {
+  const SUPABASE_URL = 'https://tvkgiocefjvktfczellr.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_rdLBqKIhIz-prJxTlWonbQ_geLNQqf4'; // publishable key: safe in a page; every row is locked by RLS
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const linkify = (s) => esc(s).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, (u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
+  const pill = (id, txt, cls) => { const el = $(id); el.textContent = txt; el.className = 'pill ' + (cls || ''); };
+  let member = null, tab = 'engine', engineStarted = false;
+
+  // ---------------- shell ----------------
+  function showScreen(which) {
+    $('signin').hidden = which !== 'signin';
+    $('notmember').hidden = which !== 'notmember';
+    $('tabs').hidden = which !== 'app';
+    $('view-engine').hidden = !(which === 'app' && tab === 'engine');
+    $('view-room').hidden = !(which === 'app' && tab === 'room');
+  }
+  function setTab(t) {
+    tab = t; try { localStorage.setItem('hq-tab', t); } catch {}
+    for (const b of $('tabs').querySelectorAll('button')) b.setAttribute('aria-selected', String(b.dataset.tab === t));
+    showScreen('app');
+    if (t === 'engine' && !engineStarted) startEngine();
+    if (t === 'room') { unread = 0; paintUnread(); toBottom(); $('text').focus(); }
+  }
+  $('tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-tab]'); if (b) setTab(b.dataset.tab); });
+
+  // ---------------- the bridge to the home PC ----------------
+  // Every engine call becomes a row in hq_requests. The database stamps who asked; the home PC answers in the row.
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const mediaCache = new Map();
+  async function fileBlob(object) {
+    const { data, error } = await sb.storage.from('hq-app').download(object);
+    if (error) throw error; return data;
+  }
+  function toResponse(row) {
+    const st = row.resp_status || 200;
+    if (row.resp_type === 'json') return new Response(JSON.stringify(row.response), { status: st, headers: { 'Content-Type': 'application/json' } });
+    if (row.resp_type === 'text') return new Response(String(row.response ?? ''), { status: st, headers: { 'Content-Type': 'text/plain' } });
+    return null;
+  }
+  async function fromCache(path) {
+    const { data } = await sb.from('hq_cache').select('resp_type,data,updated_at').eq('path', path).maybeSingle();
+    if (!data) return null;
+    const r = toResponse({ resp_status: 200, resp_type: data.resp_type, response: data.data });
+    if (r) r.headers.set('X-HQ-Cached', data.updated_at);
+    return r;
+  }
+  async function hqFetch(path, opts = {}) {
+    const method = String(opts.method || 'GET').toUpperCase();
+    let body = null;
+    if (opts.body != null) { try { body = JSON.parse(opts.body); } catch { body = { raw: String(opts.body) }; } }
+    const { data: ins, error } = await sb.from('hq_requests').insert({ method, path, body }).select('id').single();
+    if (error) return new Response(JSON.stringify({ error: 'HQ: ' + error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    const t0 = Date.now(); let cachedTried = false;
+    while (Date.now() - t0 < 60000) {
+      await sleep(Date.now() - t0 < 3000 ? 250 : 600);
+      const { data: row } = await sb.from('hq_requests').select('status,resp_status,resp_type,response').eq('id', ins.id).maybeSingle();
+      if (row && row.status !== 'new') {
+        if (row.resp_type === 'file') {
+          const blob = await fileBlob(row.response.object);
+          return new Response(blob, { status: row.resp_status || 200, headers: { 'Content-Type': row.response.type || blob.type } });
+        }
+        return toResponse(row);
+      }
+      if (method === 'GET' && !cachedTried && Date.now() - t0 > 8000) { cachedTried = true; const c = await fromCache(path); if (c) return c; }
+    }
+    if (method === 'GET') { const c = await fromCache(path); if (c) return c; }
+    return new Response(JSON.stringify({ error: 'The home PC did not answer in 60 seconds. It may be off or busy.' }), { status: 504, headers: { 'Content-Type': 'application/json' } });
+  }
+  async function hqMedia(path) {
+    if (mediaCache.has(path)) return mediaCache.get(path);
+    const p = (async () => { const r = await hqFetch(path); if (!r.ok) throw new Error(r.status); return URL.createObjectURL(await r.blob()); })();
+    mediaCache.set(path, p); p.catch(() => mediaCache.delete(path));
+    return p;
+  }
+  window.HQ = { fetch: hqFetch, media: hqMedia };
+
+  // Home-PC heartbeat: the proxy writes __heartbeat into hq_cache every 30 s.
+  async function beat() {
+    if (!member) return;
+    const { data } = await sb.from('hq_cache').select('updated_at').eq('path', '__heartbeat').maybeSingle();
+    const age = data ? (Date.now() - new Date(data.updated_at).getTime()) / 1000 : 1e9;
+    if (age < 90) pill('pc', 'home PC online', 'live');
+    else if (age < 600) pill('pc', 'home PC slow', 'warn');
+    else pill('pc', 'home PC offline (showing saved pages)', 'down');
+  }
+  setInterval(beat, 30000);
+
+  // ---------------- the engine, loaded from the private bucket ----------------
+  // In the frame: fetch('/...') and media src="/..." go to the parent's bridge. The engine code itself is unchanged.
+  const SHIM = `<script>(function(){
+    var P = window.parent, of = window.fetch.bind(window);
+    window.fetch = function(u, o){ var s = typeof u === 'string' ? u : (u && u.url) || '';
+      if (s.charAt(0) === '/' && s.charAt(1) !== '/') return P.HQ.fetch(s, o || {});
+      return of(u, o); };
+    var M = /^(IMG|VIDEO|AUDIO|SOURCE)$/;
+    function fix(el){ if (!el || !M.test(el.tagName)) return; var s = el.getAttribute('src');
+      if (s && s.charAt(0) === '/' && s.charAt(1) !== '/' && !el.__hq){ el.__hq = s; el.removeAttribute('src');
+        P.HQ.media(s).then(function(b){ el.src = b; }).catch(function(){ el.alt = el.alt || 'image unavailable'; }); } }
+    function walk(n){ if (n.nodeType !== 1) return; fix(n); if (n.querySelectorAll) n.querySelectorAll('img,video,audio,source').forEach(fix); }
+    new MutationObserver(function(ms){ ms.forEach(function(m){ if (m.type === 'attributes') fix(m.target); else m.addedNodes.forEach(walk); }); })
+      .observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
+    document.addEventListener('click', function(e){ var a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+      var h = a.getAttribute('href'); if (h && h.charAt(0) === '/' && h.charAt(1) !== '/'){ e.preventDefault();
+        P.HQ.media(h).then(function(b){ window.open(b, '_blank'); }); } }, true);
+  })();<\/script>`;
+
+  async function startEngine() {
+    engineStarted = true;
+    const bar = (f, msg) => { $('engine-bar').style.width = Math.round(f * 100) + '%'; if (msg) $('engine-msg').textContent = msg; };
+    try {
+      bar(0.05, 'Opening the engine…');
+      const man = JSON.parse(await (await fileBlob('app/manifest.json')).text());
+      let html = await (await fileBlob('app/index.html')).text();
+      const urls = {}; let n = 0;
+      await Promise.all(man.files.map(async (f) => {
+        const b = await fileBlob('app/' + f);
+        urls[f] = URL.createObjectURL(new Blob([b], { type: f.endsWith('.css') ? 'text/css' : 'text/javascript' }));
+        bar(0.1 + 0.85 * (++n / man.files.length), `Loading ${n} of ${man.files.length}…`);
+      }));
+      html = html.replace(/(src|href)="\/([a-z0-9._-]+\.(?:js|css))(\?[^"]*)?"/gi, (m, attr, f) => urls[f] ? `${attr}="${urls[f]}"` : m);
+      html = html.replace(/"three":\s*"\/vendor\/three\/three\.module\.js"/, '"three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"')
+                 .replace(/"three\/addons\/":\s*"\/vendor\/three\/addons\/"/, '"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"');
+      html = html.replace(/<head>/i, '<head>' + SHIM);
+      const frame = $('engine-frame');
+      frame.src = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      frame.onload = () => { $('engine-loading').hidden = true; frame.hidden = false; };
+      bar(1, 'Starting…');
+    } catch (e) {
+      engineStarted = false;
+      $('engine-msg').textContent = 'Could not open the engine: ' + (e.message || e) + '. Reload to try again.';
+    }
+  }
+
+  // ---------------- room ----------------
+  const LIMIT = 300; let channel = null, rows = new Map(), lastDay = '', unread = 0;
+  const paintUnread = () => { $('unread').hidden = !unread; $('unread').textContent = unread; };
+  const nearBottom = () => { const m = $('roommain'); return m.scrollHeight - m.scrollTop - m.clientHeight < 120; };
+  const toBottom = () => { const m = $('roommain'); m.scrollTop = m.scrollHeight; };
+  function render(r) {
+    if (rows.has(r.id)) return false;
+    rows.set(r.id, r);
+    const d = new Date(r.at);
+    const day = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    const list = $('list');
+    if (day !== lastDay) { const h = document.createElement('div'); h.className = 'day'; h.textContent = day; list.appendChild(h); lastDay = day; }
+    const el = document.createElement('div'); el.className = 'msg';
+    const team = r.team === 'bornjuicy' || r.team === 'okasan' ? r.team : 'agent';
+    const toTag = r.to_name && r.to_name !== 'room' ? `<span class="tag">to ${esc(r.to_name.charAt(0).toUpperCase() + r.to_name.slice(1))}</span>` : '';
+    const text = r.text || '';
+    const body = /^[A-Z]+: \{/.test(text)
+      ? `<details class="data"><summary>${esc(text.split(':')[0])} status data</summary><pre>${esc(text)}</pre></details>`
+      : `<div class="text">${linkify(text)}</div>`;
+    el.innerHTML = `<div class="meta"><span class="who ${team}">${esc(r.from_name || '?')}</span>` +
+      `<span class="when">${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>${toTag}</div>${body}`;
+    list.appendChild(el);
+    return true;
+  }
+  const visible = (r) => ['room', 'all', 'dot', 'miso', member.name].includes(r.to_name) || r.from_name === member.name;
+  async function load(sinceId) {
+    const me = member.name;
+    let q = sb.from('messages').select('id,at,from_name,to_name,team,text').or(`to_name.in.(room,all,dot,miso,${me}),from_name.eq.${me}`);
+    q = sinceId ? q.gt('id', sinceId).order('id', { ascending: true }).limit(500) : q.order('id', { ascending: false }).limit(LIMIT);
+    const { data, error } = await q;
+    if (error) { pill('status', 'room error', 'down'); return; }
+    const list = sinceId ? data : data.reverse();
+    const stick = nearBottom();
+    list.forEach(render);
+    if (!sinceId || stick) toBottom();
+  }
+  function subscribe() {
+    if (channel) sb.removeChannel(channel);
+    pill('status', 'connecting');
+    channel = sb.channel('room-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => {
+        const r = p.new; if (!r || !visible(r)) return;
+        const stick = nearBottom();
+        if (render(r)) { if (tab !== 'room' && r.from_name !== member.name) { unread++; paintUnread(); } else if (stick) toBottom(); }
+      })
+      .subscribe((s) => {
+        if (s === 'SUBSCRIBED') { pill('status', 'live', 'live'); catchUp(); }
+        else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED') pill('status', 'reconnecting', 'down');
+      });
+  }
+  const maxId = () => rows.size ? Math.max(...rows.keys()) : 0;
+  const catchUp = () => { if (member && rows.size) load(maxId()); };
+  function wake() { if (!member) return; beat(); if (!channel || channel.state !== 'joined') subscribe(); else catchUp(); }
+  window.addEventListener('focus', wake);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+  window.addEventListener('online', wake);
+
+  // ---------------- sign-in ----------------
+  async function start(session) {
+    if (!session) { member = null; showScreen('signin'); $('signout').hidden = true; $('me').textContent = ''; pill('status', 'signed out'); return; }
+    $('signout').hidden = false;
+    const { data, error } = await sb.rpc('hq_me');
+    const me = Array.isArray(data) ? data[0] : data;
+    if (error || !me) { showScreen('notmember'); $('notmember-who').textContent = 'Signed in as ' + (session.user.email || ''); pill('status', 'not a member'); return; }
+    if (member && member.name === me.name.toLowerCase()) return;
+    member = { name: me.name.toLowerCase(), team: me.team, role: me.role };
+    $('me').textContent = member.name + (member.role === 'owner' ? ' (owner)' : '');
+    let t = 'engine'; try { t = localStorage.getItem('hq-tab') || 'engine'; } catch {}
+    await load(); subscribe(); beat();
+    setTab(t === 'room' ? 'room' : 'engine');
+  }
+  $('signin-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const note = $('signin-note'); note.className = 'note'; note.textContent = 'Sending…';
+    const { error } = await sb.auth.signInWithOtp({ email: $('email').value.trim(), options: { emailRedirectTo: location.origin + location.pathname } });
+    if (error) { note.className = 'note err'; note.textContent = error.message; } else note.textContent = 'Check your email and open the link.';
+  });
+  $('signout').addEventListener('click', async () => {
+    if (channel) sb.removeChannel(channel); channel = null; rows.clear(); $('list').innerHTML = ''; lastDay = ''; member = null;
+    engineStarted = false; $('engine-frame').hidden = true; $('engine-frame').removeAttribute('src'); $('engine-loading').hidden = false;
+    await sb.auth.signOut();
+  });
+  const ta = $('text');
+  const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
+  ta.addEventListener('input', grow);
+  ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('compose').requestSubmit(); } });
+  $('to').addEventListener('change', () => { ta.placeholder = $('to').value === 'room' ? 'Message the room' : 'Message ' + $('to').selectedOptions[0].text; });
+  $('compose').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const text = ta.value.trim(); if (!text || !member) return;
+    $('send').disabled = true;
+    const { data, error } = await sb.from('messages').insert({ from_name: member.name, to_name: $('to').value, team: member.team, text })
+      .select('id,at,from_name,to_name,team,text').single();
+    $('send').disabled = false;
+    if (error) { pill('status', 'not sent: ' + error.message, 'down'); return; }
+    ta.value = ''; grow(); if (render(data)) toBottom();
+  });
+  sb.auth.onAuthStateChange((_ev, session) => { setTimeout(() => start(session), 0); });
+})();
+</script>
+</body>
+</html>
