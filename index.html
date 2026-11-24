@@ -2,261 +2,126 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>Team Room</title>
-<meta name="robots" content="noindex">
-<style>
-  :root {
-    --bg: #f6f6f4; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #e3e3de;
-    --accent: #2f6fde; --accent-ink: #ffffff; --tag: #fff1d6; --tag-ink: #7a4b00;
-    --okasan: #2f6fde; --bornjuicy: #c2410c; --agent: #6b6b66; --err: #b42318;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141413; --panel: #1e1e1c; --ink: #ececea; --muted: #9b9b95; --line: #2e2e2b;
-      --accent: #6c9cff; --accent-ink: #0d0d0c; --tag: #3a2c10; --tag-ink: #ffcf7a;
-      --okasan: #7aa6ff; --bornjuicy: #ff8f5a; --agent: #9b9b95; --err: #ff7b6e;
-    }
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    background: var(--bg); color: var(--ink);
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    display: flex; flex-direction: column;
-  }
-  header {
-    display: flex; align-items: center; gap: 12px; padding: 10px 16px;
-    border-bottom: 1px solid var(--line); background: var(--panel);
-  }
-  header h1 { font-size: 17px; margin: 0; font-weight: 650; }
-  #status { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
-  #status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-  #status.live::before { background: #22a55a; }
-  #status.down::before { background: var(--err); }
-  header .spacer { flex: 1; }
-  header button { font: inherit; font-size: 13px; background: none; border: 1px solid var(--line);
-    color: var(--muted); border-radius: 8px; padding: 4px 10px; cursor: pointer; }
-  header button:hover { color: var(--ink); border-color: var(--muted); }
-  main { flex: 1; overflow-y: auto; padding: 12px 16px; }
-  .wrap { max-width: 820px; margin: 0 auto; }
-  .msg { padding: 8px 0; border-bottom: 1px solid var(--line); }
-  .msg:last-child { border-bottom: 0; }
-  .meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: 13px; }
-  .who { font-weight: 650; text-transform: capitalize; }
-  .who.okasan { color: var(--okasan); } .who.bornjuicy { color: var(--bornjuicy); }
-  .when { color: var(--muted); font-size: 12px; }
-  .tag { background: var(--tag); color: var(--tag-ink); font-size: 11px; font-weight: 600;
-    border-radius: 6px; padding: 1px 6px; }
-  .text { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 2px; }
-  .text a { color: var(--accent); }
-  details.data summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-  details.data pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; color: var(--muted); }
-  .day { text-align: center; color: var(--muted); font-size: 12px; margin: 14px 0 4px; }
-  footer { border-top: 1px solid var(--line); background: var(--panel); padding: 10px 16px
-    calc(10px + env(safe-area-inset-bottom)); }
-  .compose { max-width: 820px; margin: 0 auto; display: flex; gap: 8px; align-items: flex-end; }
-  .compose select, .compose textarea, .compose button, .card input, .card button {
-    font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px;
-  }
-  .compose select { padding: 8px 6px; }
-  .compose textarea { flex: 1; min-width: 0; resize: none; padding: 8px 10px; max-height: 160px; }
-  .compose button, .card button { background: var(--accent); color: var(--accent-ink); border-color: var(--accent);
-    padding: 8px 14px; font-weight: 600; cursor: pointer; }
-  .compose button:disabled { opacity: .5; cursor: default; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .hint { max-width: 820px; margin: 4px auto 0; font-size: 11px; color: var(--muted); }
-  .card { max-width: 380px; margin: 12vh auto 0; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 14px; padding: 22px; }
-  .card h2 { margin: 0 0 6px; font-size: 18px; }
-  .card p { margin: 0 0 14px; color: var(--muted); }
-  .card form { display: flex; flex-direction: column; gap: 10px; }
-  .card input { padding: 10px 12px; }
-  .note { font-size: 13px; color: var(--muted); margin-top: 10px; }
-  .note.err { color: var(--err); }
-  [hidden] { display: none !important; }
-</style>
+<meta name="theme-color" content="#07060d">
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Room">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="lr-core.css?v=202611241106">
+<link rel="stylesheet" href="hq.css?v=202611241106">
+<link rel="stylesheet" href="room.css?v=202611241106">
+<style>[hidden]{display:none!important}</style>
 </head>
 <body>
-<header>
-  <h1>Team Room</h1>
-  <span id="status">offline</span>
-  <span class="spacer"></span>
-  <span id="me" class="when"></span>
-  <button id="signout" hidden>Sign out</button>
-</header>
+<div class="sky" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="grid"></i></div>
+<canvas id="fx" aria-hidden="true"></canvas>
 
-<main id="main">
-  <div class="card" id="signin" hidden>
-    <h2>Sign in</h2>
-    <p>Type your email. We send you a link; open it on this device.</p>
-    <form id="signin-form">
-      <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-      <button type="submit">Send link</button>
-    </form>
-    <div id="signin-note" class="note"></div>
+<!-- the door: sign in, or ask to join -->
+<div class="gate" id="gate">
+  <div class="gatein">
+    <div class="glogo" aria-hidden="true"><span></span><span></span><span></span><b></b></div>
+    <p class="gkick" id="gKick">One team. One room.</p>
+    <h1 class="gtitle" id="gTitle">Team Room</h1>
+    <div class="gbox panel" id="gCard" aria-live="polite"><div class="gspin" aria-label="Opening the room"><i></i><i></i><i></i></div></div>
+    <p class="gfoot" id="gFoot"></p>
   </div>
-  <div class="card" id="notmember" hidden>
-    <h2>Not in the room yet</h2>
-    <p>Ask Miso to add you.</p>
-    <div class="note" id="notmember-who"></div>
+</div>
+
+<div class="hq" id="hq" hidden>
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><i></i></span>
+      <h1 id="brandName">Team <span>Room</span></h1>
+    </div>
+    <span class="conn wait" id="conn" role="status" aria-live="polite"><i></i><span id="connText">Reading</span></span>
+    <button type="button" class="me" id="meBtn" data-tab="people" aria-label="You and the team"><span id="meIni">?</span></button>
+  </header>
+
+  <main id="main">
+    <div id="notice" class="sec" hidden></div>
+
+    <section class="view" id="v-today" data-view="today" aria-labelledby="h-today">
+      <div class="vhead"><span class="eyebrow" id="todayDate">Today</span><h2 id="h-today">Today</h2></div>
+      <div id="todayBody"><div class="skel" aria-hidden="true"><i></i><i></i><i></i></div></div>
+    </section>
+
+    <section class="view" id="v-approve" data-view="approve" aria-labelledby="h-approve" hidden>
+      <div class="vhead"><h2 id="h-approve">Needs you</h2></div>
+      <div id="approveBody"><div class="skel" aria-hidden="true"><i></i><i></i><i></i></div></div>
+    </section>
+
+    <section class="view chatview" id="v-chat" data-view="chat" aria-labelledby="h-chat" hidden>
+      <div class="vhead chead"><h2 id="h-chat">Chat</h2>
+        <div class="seg" role="group" aria-label="Which messages">
+          <button type="button" class="segb" data-chat-filter="room" aria-pressed="true">Room</button>
+          <button type="button" class="segb" data-chat-filter="me" aria-pressed="false">To me</button>
+          <button type="button" class="segb" data-chat-filter="bus" aria-pressed="false" id="busBtn" hidden>All traffic</button>
+        </div>
+      </div>
+      <div id="chatBody" class="chatlist" role="log" aria-live="polite"><div class="skel" aria-hidden="true"><i></i><i></i><i></i></div></div>
+      <button type="button" class="newpill" id="chatNew" hidden>New messages</button>
+      <form class="composer" id="composer" autocomplete="off">
+        <div class="tochips" id="toChips" role="radiogroup" aria-label="Send to"></div>
+        <div class="crow">
+          <textarea id="chatText" rows="1" placeholder="Message the room" aria-label="Your message" maxlength="4000"></textarea>
+          <button type="submit" class="btn primary sendb" id="chatSend" aria-label="Send" disabled></button>
+        </div>
+      </form>
+    </section>
+
+    <section class="view" id="v-launches" data-view="launches" aria-labelledby="h-launches" hidden>
+      <div class="vhead"><h2 id="h-launches">Launches</h2></div>
+      <div class="lrwrap" id="lrBody"></div>
+    </section>
+
+    <section class="view" id="v-team" data-view="team" aria-labelledby="h-team" hidden>
+      <div class="vhead"><h2 id="h-team">Team</h2></div>
+      <div id="teamBody"><div class="skel" aria-hidden="true"><i></i><i></i></div></div>
+    </section>
+
+    <section class="view" id="v-menu" data-view="menu" aria-labelledby="h-menu" hidden>
+      <div class="vhead"><h2 id="h-menu">Numbers</h2></div>
+      <div id="menuBody"><div class="skel" aria-hidden="true"><i></i><i></i></div></div>
+    </section>
+
+    <section class="view" id="v-people" data-view="people" aria-labelledby="h-people" hidden>
+      <div class="vhead"><h2 id="h-people">People</h2></div>
+      <div id="peopleBody"><div class="skel" aria-hidden="true"><i></i><i></i></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><p id="toastText"></p><button type="button" class="btn" id="toastUndo">Undo</button></div>
+
+<nav class="tabs" id="tabs" aria-label="Sections" hidden>
+  <div class="sub" id="subtabs" role="tablist" aria-label="More sections" hidden>
+    <button type="button" class="tab" role="tab" id="t-team" data-tab="team" aria-controls="v-team" aria-selected="false"><span class="ico" data-i="team"></span>Team</button>
+    <button type="button" class="tab" role="tab" id="t-menu" data-tab="menu" aria-controls="v-menu" aria-selected="false"><span class="ico" data-i="chart"></span>Numbers</button>
+    <button type="button" class="tab" role="tab" id="t-people" data-tab="people" aria-controls="v-people" aria-selected="false"><span class="ico" data-i="people"></span>People</button>
   </div>
-  <div class="wrap" id="list" hidden></div>
-</main>
+  <div class="in" role="tablist">
+    <i class="ink" id="tabInk" aria-hidden="true"></i>
+    <button type="button" class="tab" role="tab" id="t-today" data-tab="today" aria-controls="v-today" aria-selected="true"><span class="ico" data-i="today"></span>Today</button>
+    <button type="button" class="tab" role="tab" id="t-approve" data-tab="approve" aria-controls="v-approve" aria-selected="false"><span class="ico" data-i="approve"></span>Needs you<span class="badge" id="badge" hidden></span></button>
+    <button type="button" class="tab" role="tab" id="t-chat" data-tab="chat" aria-controls="v-chat" aria-selected="false"><span class="ico" data-i="reply"></span>Chat<span class="badge" id="chatBadge" hidden></span></button>
+    <button type="button" class="tab" role="tab" id="t-launches" data-tab="launches" aria-controls="v-launches" aria-selected="false"><span class="ico" data-i="launches"></span>Launches</button>
+    <button type="button" class="tab more" id="t-more" data-more aria-expanded="false" aria-controls="subtabs"><span class="ico" data-i="menu"></span>More</button>
+  </div>
+</nav>
 
-<footer id="footer" hidden>
-  <form class="compose" id="compose">
-    <select id="to" aria-label="To">
-      <option value="room">Room</option>
-      <option value="dot">Dot</option>
-      <option value="miso">Miso</option>
-      <option value="all">All</option>
-    </select>
-    <textarea id="text" rows="1" placeholder="Message the room" aria-label="Message"></textarea>
-    <button id="send" type="submit">Send</button>
-  </form>
-  <div class="hint">Enter sends. Shift+Enter adds a line.</div>
-</footer>
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
-<script>
-(() => {
-  const SUPABASE_URL = 'https://tvkgiocefjvktfczellr.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_rdLBqKIhIz-prJxTlWonbQ_geLNQqf4'; // publishable key: safe in a page, rows are locked by RLS
-  const LIMIT = 300;
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
-  const $ = (id) => document.getElementById(id);
-  let member = null, channel = null, rows = new Map(), lastDay = '';
-
-  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const linkify = (s) => esc(s).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, (u) => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`);
-  const status = (txt, cls) => { const el = $('status'); el.textContent = txt; el.className = cls || ''; };
-  const show = (which) => {
-    for (const id of ['signin', 'notmember', 'list']) $(id).hidden = id !== which;
-    $('footer').hidden = which !== 'list';
-  };
-  const nearBottom = () => { const m = $('main'); return m.scrollHeight - m.scrollTop - m.clientHeight < 120; };
-  const toBottom = () => { const m = $('main'); m.scrollTop = m.scrollHeight; };
-
-  function render(r) {
-    if (rows.has(r.id)) return false;
-    rows.set(r.id, r);
-    const d = new Date(r.at);
-    const day = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-    const list = $('list');
-    if (day !== lastDay) { const h = document.createElement('div'); h.className = 'day'; h.textContent = day; list.appendChild(h); lastDay = day; }
-    const el = document.createElement('div');
-    el.className = 'msg';
-    const team = r.team === 'bornjuicy' || r.team === 'okasan' ? r.team : 'agent';
-    const toTag = r.to_name && r.to_name !== 'room'
-      ? `<span class="tag">to ${esc(r.to_name.charAt(0).toUpperCase() + r.to_name.slice(1))}</span>` : '';
-    const text = r.text || '';
-    const body = /^[A-Z]+: \{/.test(text)
-      ? `<details class="data"><summary>${esc(text.split(':')[0])} status data</summary><pre>${esc(text)}</pre></details>`
-      : `<div class="text">${linkify(text)}</div>`;
-    el.innerHTML = `<div class="meta"><span class="who ${team}">${esc(r.from_name || '?')}</span>` +
-      `<span class="when">${d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>${toTag}</div>${body}`;
-    list.appendChild(el);
-    return true;
-  }
-
-  function visible(r) {
-    const me = member.name;
-    return ['room', 'all', 'dot', 'miso', me].includes(r.to_name) || r.from_name === me;
-  }
-
-  async function load(sinceId) {
-    const me = member.name;
-    let q = sb.from('messages').select('id,at,from_name,to_name,team,text')
-      .or(`to_name.in.(room,all,dot,miso,${me}),from_name.eq.${me}`);
-    q = sinceId ? q.gt('id', sinceId).order('id', { ascending: true }).limit(500)
-                : q.order('id', { ascending: false }).limit(LIMIT);
-    const { data, error } = await q;
-    if (error) { status('error: ' + error.message, 'down'); return; }
-    const list = sinceId ? data : data.reverse();
-    const stick = nearBottom();
-    list.forEach(render);
-    if (!sinceId || stick) toBottom();
-  }
-
-  function subscribe() {
-    if (channel) sb.removeChannel(channel);
-    status('connecting');
-    channel = sb.channel('room-live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (p) => {
-        const r = p.new;
-        if (!r || !visible(r)) return;
-        const stick = nearBottom();
-        if (render(r) && stick) toBottom();
-      })
-      .subscribe((s) => {
-        if (s === 'SUBSCRIBED') { status('live', 'live'); catchUp(); }
-        else if (s === 'CHANNEL_ERROR' || s === 'TIMED_OUT' || s === 'CLOSED') status('reconnecting', 'down');
-      });
-  }
-
-  const maxId = () => rows.size ? Math.max(...rows.keys()) : 0;
-  const catchUp = () => { if (member && rows.size) load(maxId()); };
-
-  function wake() {
-    if (!member) return;
-    const st = channel && channel.state;
-    if (st !== 'joined') subscribe(); else catchUp();
-  }
-  window.addEventListener('focus', wake);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
-  window.addEventListener('online', wake);
-
-  async function start(session) {
-    if (!session) { member = null; show('signin'); $('signout').hidden = true; $('me').textContent = ''; status('signed out'); return; }
-    $('signout').hidden = false;
-    const email = (session.user.email || '').toLowerCase();
-    const { data, error } = await sb.from('room_members').select('name,team').eq('email', email).maybeSingle();
-    if (error || !data) { show('notmember'); $('notmember-who').textContent = 'Signed in as ' + email; status('not a member'); return; }
-    if (member && member.name === data.name.toLowerCase()) return;
-    member = { name: data.name.toLowerCase(), team: data.team };
-    $('me').textContent = member.name;
-    show('list');
-    await load();
-    subscribe();
-    $('text').focus();
-  }
-
-  $('signin-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const note = $('signin-note');
-    note.className = 'note'; note.textContent = 'Sending...';
-    const { error } = await sb.auth.signInWithOtp({ email: $('email').value.trim(),
-      options: { emailRedirectTo: location.origin + location.pathname } });
-    if (error) { note.className = 'note err'; note.textContent = error.message; }
-    else note.textContent = 'Check your email and open the link.';
-  });
-
-  $('signout').addEventListener('click', async () => { if (channel) sb.removeChannel(channel); channel = null; rows.clear(); $('list').innerHTML = ''; lastDay = ''; member = null; await sb.auth.signOut(); });
-
-  const ta = $('text');
-  const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'; };
-  ta.addEventListener('input', grow);
-  ta.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); $('compose').requestSubmit(); }
-  });
-  $('to').addEventListener('change', () => { ta.placeholder = $('to').value === 'room' ? 'Message the room' : 'Message ' + $('to').selectedOptions[0].text; });
-  $('compose').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const text = ta.value.trim();
-    if (!text || !member) return;
-    $('send').disabled = true;
-    const { data, error } = await sb.from('messages')
-      .insert({ from_name: member.name, to_name: $('to').value, team: member.team, text })
-      .select('id,at,from_name,to_name,team,text').single();
-    $('send').disabled = false;
-    if (error) { status('not sent: ' + error.message, 'down'); return; }
-    ta.value = ''; grow();
-    if (render(data)) toBottom();
-  });
-
-  sb.auth.onAuthStateChange((_ev, session) => { setTimeout(() => start(session), 0); });
-})();
-</script>
+<script src="config.js?v=202611241106"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="lr-core.js?v=202611241106"></script>
+<script src="hq-core.js?v=202611241106"></script>
+<script src="room.js?v=202611241106"></script>
 </body>
 </html>
