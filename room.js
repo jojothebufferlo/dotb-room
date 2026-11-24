@@ -253,7 +253,7 @@
 
   // ---- every call to the database, live or the local demo
   let demo = null, demoP = null;
-  const demoReady = () => demoP || (demoP = fetch('dev/fixture.json').then(r => r.json()).then(f => { demo = { docs: {}, answers: {}, msgs: f.msgs || [], rx: [], nid: 9000 }; Object.keys(f.docs).forEach(c => Object.keys(f.docs[c]).forEach(id => { demo.docs[c + '/' + id] = f.docs[c][id]; })); }));
+  const demoReady = () => demoP || (demoP = fetch('dev/fixture.json').then(r => r.json()).then(f => { demo = { docs: {}, answers: f.answers || {}, msgs: f.msgs || [], rx: [], nid: 9000 }; Object.keys(f.docs).forEach(c => Object.keys(f.docs[c]).forEach(id => { demo.docs[c + '/' + id] = f.docs[c][id]; })); }));
   const Api = DEMO ? {
     async docs() { await demoReady(); return Object.keys(demo.docs).map(id => ({ id, data: demo.docs[id], updated_at: '2026-11-22T00:00:00Z' })); },
     async stamps() { return []; }, async docsById() { return []; },

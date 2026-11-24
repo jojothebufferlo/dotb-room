@@ -387,7 +387,7 @@
   }
   function recentRow(a, ans, now) {
     const at = (ans && ans.carried_at) || a.carried_at;
-    return `<div class="panel aline done"><div class="alr">${gdot(a.game)}<span class="atk">${ico('done')}</span><span class="alt"><b>${esc(titleOf(a))}</b><span>${ans && ans.who ? esc(upper1(ans.who)) + ' · ' : ''}${ans ? esc(choiceLabel(a, ans)) + ' · ' : ''}delivered${at ? ' ' + esc(sentAt(at, now)) : ''}</span></span></div></div>`;
+    return `<div class="panel aline done"><div class="alr">${gdot(a.game)}<span class="atk">${ico('done')}</span><span class="alt"><b>${esc(titleOf(a))}</b><span>${ans && ans.who ? esc(upper1(ans.who)) + ' · ' : ''}${ans ? esc(choiceLabel(a, ans)) + ' · ' : ''}${ans && /to confirm/.test(ans.carried_to || '') ? 'received' + (at ? ' ' + esc(sentAt(at, now)) : '') + ' · Miso checks with Joel first' : ans && /^not carried/.test(ans.carried_to || '') ? 'not carried' : 'delivered' + (at ? ' ' + esc(sentAt(at, now)) : '')}</span></span></div></div>`;
   }
   function fold(key, title, line, count, inner, openDefault) {
     const open = S.open[key] != null ? S.open[key] : !!openDefault;
