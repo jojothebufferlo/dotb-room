@@ -53,7 +53,10 @@
     catch (e) { sb = null; }
   }
   const me = { name: null, team: null, role: null, email: null };
-  const isAdmin = () => me.role === 'admin';
+  const isOwner = () => me.role === 'owner';
+  const isAdmin = () => me.role === 'admin' || me.role === 'owner';
+  const roleName = r => (r === 'owner' ? 'Owner' : r === 'admin' ? 'Admin' : 'Member');
+  const teamFor = n => (n === 'nicol' ? 'bornjuicy' : me.team || 'okasan'); // Nicol is Born Juicy's owner
 
   // =====================================================================================================
   // The door
@@ -299,10 +302,46 @@
     },
   };
 
+  // Partner studio cards (room docs partner/<team>): one card per studio under the Team list. Read-only.
+  const Partner = {
+    open: {},
+    draw() {
+      const el = $('partnerBody'); if (!el) return;
+      const ids = Object.keys(D.docs).filter(id => id.startsWith('partner/')).sort();
+      const now = Date.now(); const day = iso => { try { return HQ.when(iso, 'day'); } catch (e) { return ''; } };
+      const fold = (key, title, line, count, body) => `<details class="fold" data-pfold="${esc(key)}"${Partner.open[key] ? ' open' : ''}><summary class="foldh"><span class="t"><b>${esc(title)}</b>${line ? `<span>${esc(line)}</span>` : ''}</span><span class="c"><span class="num">${esc(count)}</span>${ico('chev')}</span></summary><div class="pfb">${body}</div></details>`;
+      el.innerHTML = ids.map(id => {
+        const P = D.docs[id] || {}; const k = id.slice(8); const C = P.checks || {};
+        const now_ = Array.isArray(P.now) ? P.now : [], wait = Array.isArray(P.waiting) ? P.waiting : [], games = Array.isArray(P.games) ? P.games : [], ppl = Array.isArray(P.people) ? P.people : [];
+        const fails = +C.fail || 0, pass = +C.pass || 0, off = (+C.off || 0) + (+C.skipped || 0);
+        const stale = P.read_at && now - Date.parse(P.read_at) > 3 * 864e5;
+        const item = (t, sub, tag) => `<li><b>${esc(t)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}${tag ? `<i>${esc(tag)}</i>` : ''}</li>`;
+        const more = (n, shown) => (n > shown ? `<li class="more">+${n - shown} more in their backlog</li>` : '');
+        const nn = +P.now_n || now_.length, wn = +P.waiting_n || wait.length;
+        return `<section class="sec partner"><div class="eyebrow">Partner studio</div><article class="panel pcard">
+          <div class="pch"><span class="av" aria-hidden="true">${esc(String(P.title || k).split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase())}</span>
+            <span class="pcn"><b>${esc(P.title || cap(k))}</b><span>${esc(P.lead || '')}${P.read_at ? ' · read ' + esc(day(P.read_at)) : ''}</span></span>
+            ${stale ? `<span class="chip warn">${ico('wait')}Old</span>` : ''}</div>
+          <div class="pstats">
+            <div class="pst ${fails ? 'bad' : 'good'}"><b class="num">${fails ? esc(fails) : esc(pass)}</b><span>${fails ? 'checks fail' : 'checks pass'}</span></div>
+            <div class="pst"><b class="num">${esc(nn)}</b><span>in work</span></div>
+            <div class="pst ${wn ? 'warn' : ''}"><b class="num">${esc(wn)}</b><span>waiting</span></div>
+          </div>
+          ${now_.length ? fold(k + ':now', 'In work', now_[0].t, nn, '<ul class="pli">' + now_.map(x => item(x.t, x.line, [x.who, x.d].filter(Boolean).join(' · '))).join('') + more(nn, now_.length) + '</ul>') : ''}
+          ${wait.length ? fold(k + ':wait', 'Waiting on', wait[0].who ? cap(wait[0].who) : '', wn, '<ul class="pli">' + wait.map(x => item(x.t, x.why, [x.who ? cap(x.who) : '', x.d].filter(Boolean).join(' · '))).join('') + more(wn, wait.length) + '</ul>') : ''}
+          ${games.length ? fold(k + ':games', 'Games', games.map(g => g.name).join(', '), games.length, '<ul class="pli">' + games.map(g => item(g.name, g.next ? 'Next: ' + g.next : '', [g.kind, g.stage].filter(Boolean).join(' · ')) + (Array.isArray(g.needs) && g.needs.length ? `<li class="needs">${g.needs.map(n => `<span class="chip warn">${esc(n)}</span>`).join('')}</li>` : '')).join('') + '</ul>') : ''}
+          ${ppl.length ? fold(k + ':team', 'Their team', ppl.map(p => p.name).slice(0, 3).join(', '), ppl.length, '<ul class="pli">' + ppl.map(p => item(p.name, p.job, p.kind)).join('') + '</ul>') : ''}
+          ${C.at ? fold(k + ':checks', 'Checks', 'Run ' + day(C.at), pass + '/' + (pass + fails), `<div class="pchk"><span class="chip good">${esc(pass)} pass</span><span class="chip ${fails ? 'bad' : ''}">${esc(fails)} fail</span><span class="chip">${esc(off)} off</span></div>` + (Array.isArray(C.off_list) && C.off_list.length ? '<p class="poff">Off: ' + esc(C.off_list.concat(C.skipped_list || []).join(', ')) + '</p>' : '')) : ''}
+        </article></section>`;
+      }).join('');
+    },
+  };
+  document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.pfold) Partner.open[d.dataset.pfold] = d.open; }, true);
+
   const Live = {
     last: 0, channel: null,
     async start() {
-      readCache(); const had = D.cached;
+      readCache(); const had = D.cached; if (had) Partner.draw();
       await this.all();
       if (!had) setTimeout(() => FX.afterTab(HQ.S.tab), 90);   // first cards rise in when they first arrive
       if (DEMO) return;
@@ -316,7 +355,7 @@
         const rows = await Api.docs(); const docs = {}, stamp = {};
         rows.forEach(r => { docs[r.id] = r.data; stamp[r.id] = r.updated_at; });
         D.docs = docs; D.stamp = stamp; await this.answers(true);
-        D.fresh = true; this.last = Date.now(); COLS.forEach(emit); emit('answers'); saveCache();
+        D.fresh = true; this.last = Date.now(); COLS.forEach(emit); emit('answers'); Partner.draw(); saveCache();
       } catch (e) { if (D.cached) { COLS.forEach(emit); emit('answers'); } HQ.S.err = HQ.S.err || null; setTimeout(() => this.all(), 8000); }
     },
     async answers(quiet) {
@@ -332,7 +371,7 @@
         Object.keys(D.docs).forEach(id => { if (!seen.has(id)) { delete D.docs[id]; delete D.stamp[id]; cols.add(id.split('/')[0]); } });
         if (want.length) (await Api.docsById(want)).forEach(r => { D.docs[r.id] = r.data; D.stamp[r.id] = r.updated_at; cols.add(r.id.split('/')[0]); });
         await this.answers(true); this.last = Date.now();
-        cols.forEach(c => { if (COLS.includes(c)) emit(c); }); emit('answers'); saveCache();
+        cols.forEach(c => { if (COLS.includes(c)) emit(c); }); emit('answers'); if (cols.has('partner')) Partner.draw(); saveCache();
         Chat.catchUp();
       } catch (e) { /* the next tick tries again */ }
     },
@@ -343,7 +382,7 @@
         const rows = await Api.docsById(ids); const got = new Set(); const cols = new Set();
         rows.forEach(r => { got.add(r.id); D.docs[r.id] = r.data; D.stamp[r.id] = r.updated_at; cols.add(r.id.split('/')[0]); });
         ids.forEach(id => { if (!got.has(id) && D.docs[id]) { delete D.docs[id]; delete D.stamp[id]; cols.add(id.split('/')[0]); } });
-        Live.last = Date.now(); cols.forEach(c => { if (COLS.includes(c)) emit(c); }); saveCache();
+        Live.last = Date.now(); cols.forEach(c => { if (COLS.includes(c)) emit(c); }); if (cols.has('partner')) Partner.draw(); saveCache();
       } catch (e) { /* delta() picks it up */ }
     }, 500),
     listen() {
@@ -495,7 +534,7 @@
       const codeBox = em => { const c = this.code[em]; if (!c) return ''; if (c.wait) return `<div class="codebox wait"><div class="gspin"><i></i><i></i><i></i></div><span>Making a code…</span></div>`; if (c.fail) return `<div class="codebox bad">${ico('alert')}<span>The studio PC did not answer. Try again in a minute.</span></div>`;
         return `<div class="codebox"><b class="num">${esc(c.code)}</b><span>Works once · 1 hour</span><button type="button" class="btn small" data-p="copy" data-email="${esc(em)}">${ico('link')}Copy invite</button></div>`; };
       let h = `<section class="asec u-grey"><div class="shead"><h3>You</h3></div><div class="glist tight">
-        ${row(me.name || '?', esc(isAdmin() ? 'Admin' : 'Member'), `<button type="button" class="btn small" data-p="signout">${ico('out')}Sign out</button>`)}
+        ${row(me.name || '?', roleName(me.role), `<button type="button" class="btn small" data-p="signout">${ico('out')}Sign out</button>`)}
         <div class="panel pset"><span class="pk">${ico('sun')}Look</span><div class="seg" role="group" aria-label="Theme">${THEMES.map(t => `<button type="button" class="segb" data-theme-set="${t}" aria-pressed="${t === th}">${cap(t)}</button>`).join('')}</div></div>
         <div class="panel pset"><span class="pk">${ico('key')}Another device</span><button type="button" class="btn small" data-p="code" data-email="${esc(me.email)}"${this.busy.code ? ' disabled' : ''}>Get a code</button>${codeBox(me.email)}</div>
         <details class="det panel pinst"><summary class="deth">Put it on your phone${ico('chev')}</summary><div class="detb"><p class="dl"><b>iPhone:</b> Share, then Add to Home Screen.</p><p class="dl"><b>Android:</b> menu ⋮, then Add to Home screen.</p><p class="dl">Then sign in once inside the app with a code.</p></div></details>
@@ -506,9 +545,10 @@
       const humans = (isAdmin() && this.members.length ? this.members : this.team);
       h += `<section class="asec u-green"><div class="shead"><h3>In the room</h3><span class="cnt num">${humans.length}</span></div><div class="glist tight">
         ${humans.map(m => { const self = m.name === me.name; const k = 'm:' + (m.email || m.name);
-          return isAdmin() && m.email && !self ? `<details class="panel prow pfold" data-fold-p="${esc(k)}"${this.code[m.email] ? ' open' : ''}><summary><i class="av a${hash(m.name) % 8}">${esc(m.name[0].toUpperCase())}</i><span class="pn"><b>${esc(cap(m.name))}</b><span>${m.role === 'admin' ? 'Admin' : 'Member'}</span></span>${ico('chev')}</summary>
-            <div class="pacts"><button type="button" class="btn small" data-p="code" data-email="${esc(m.email)}">${ico('key')}Sign-in code</button><button type="button" class="btn small" data-p="role" data-email="${esc(m.email)}" data-role="${m.role === 'admin' ? 'member' : 'admin'}">${m.role === 'admin' ? 'Make member' : 'Make admin'}</button><button type="button" class="btn small no" data-p="remove" data-email="${esc(m.email)}" data-name="${esc(m.name)}">Remove</button>${codeBox(m.email)}</div></details>`
-            : row(m.name, m.role === 'admin' ? 'Admin' : 'Member', self ? '<span class="chip">You</span>' : ''); }).join('')}
+          const mine = isOwner() || (m.role !== 'owner' && !OWNERS.includes(m.name)); const canCode = isOwner() ? m.role !== 'owner' : (m.role === 'member' && !OWNERS.includes(m.name));
+          return isAdmin() && m.email && !self && mine ? `<details class="panel prow pfold" data-fold-p="${esc(k)}"${this.code[m.email] ? ' open' : ''}><summary><i class="av a${hash(m.name) % 8}">${esc(m.name[0].toUpperCase())}</i><span class="pn"><b>${esc(cap(m.name))}</b><span>${roleName(m.role)}</span></span>${ico('chev')}</summary>
+            <div class="pacts">${canCode ? `<button type="button" class="btn small" data-p="code" data-email="${esc(m.email)}">${ico('key')}Sign-in code</button>` : ''}${m.role === 'owner' ? '' : `<button type="button" class="btn small" data-p="role" data-email="${esc(m.email)}" data-role="${m.role === 'admin' ? 'member' : 'admin'}">${m.role === 'admin' ? 'Make member' : 'Make admin'}</button>`}<button type="button" class="btn small no" data-p="remove" data-email="${esc(m.email)}" data-name="${esc(m.name)}">Remove</button>${codeBox(m.email)}</div></details>`
+            : row(m.name, roleName(m.role), self ? '<span class="chip">You</span>' : ''); }).join('')}
         ${isAdmin() ? (this.add ? `<div class="panel padd"><label for="pName">First name</label><input id="pName" type="text" maxlength="24" autocomplete="off" placeholder="nicol"><label for="pEmail">Email</label><input id="pEmail" type="email" inputmode="email" autocapitalize="off" autocomplete="off" placeholder="name@example.com">
           ${this.err ? `<p class="err" role="alert">${esc(this.err)}</p>` : ''}<div class="row"><button type="button" class="btn" data-p="add-cancel">Cancel</button><button type="button" class="btn primary" data-p="add-save"${this.busy.add ? ' disabled' : ''}>${ico('yes')}Add</button></div></div>`
           : `<button type="button" class="btn wide" data-p="add">${ico('plus')}Add a person</button>`) : ''}
@@ -542,18 +582,20 @@
         const name = ($('pName').value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, ''); const em = ($('pEmail').value || '').trim().toLowerCase();
         if (!name || !emailOk(em)) { People.err = 'A first name and an email, please.'; People.draw(); return; }
         if ((People.members || []).some(m => String(m.name).toLowerCase() === name) || AI.some(a => a[0] === name) || ['room', 'all', 'dot', 'pip'].includes(name)) { People.err = 'That name is taken. Pick another.'; People.draw(); return; }
+        if (OWNERS.includes(name) && !isOwner()) { People.err = 'Only an owner can add ' + cap(name) + '.'; People.draw(); return; }   // this name can answer asks
         People.busy.add = true; People.draw();
-        try { await Api.addMember({ email: em, name, team: me.team || 'okasan', role: 'member' }); People.add = false; HQ.toast(cap(name) + ' is in. Making a code.', null); People.busy.add = false; await People.load(); People.getCode(em); return; }
+        try { await Api.addMember({ email: em, name, team: teamFor(name), role: 'member' }); People.add = false; HQ.toast(cap(name) + ' is in. Making a code.', null); People.busy.add = false; await People.load(); People.getCode(em); return; }
         catch (x) { People.err = /duplicate/i.test(x.message) ? 'That email is already in.' : 'Not saved. Try again.'; }
         People.busy.add = false; await People.load();
       }
       else if (act === 'letin') {
         let name = (b.dataset.name || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '') || 'guest';
         const taken = x => (People.members || []).some(m => String(m.name).toLowerCase() === x) || AI.some(a => a[0] === x) || ['room', 'all', 'dot', 'pip'].includes(x);
+        if (OWNERS.includes(name) && !taken(name) && !isOwner()) { HQ.toast('Only an owner can let ' + cap(name) + ' in.', null); return; }
         if (OWNERS.includes(name) && !taken(name) && b.dataset.sure !== '1') { b.dataset.sure = '1'; b.innerHTML = 'Really ' + esc(cap(name)) + '? Tap again'; return; }   // this name can answer asks
         if (taken(name)) { let i = 2; while (taken(name + i)) i++; name += i; }
         People.busy[email] = true; People.draw();
-        await Api.addMember({ email, name, team: me.team || 'okasan', role: 'member' }); await Api.dropRequest(email); delete People.busy[email]; FX.burst(b, 18); HQ.toast(cap(name) + ' is in. Making a code.', null); await People.load(); People.getCode(email);
+        await Api.addMember({ email, name, team: teamFor(name), role: 'member' }); await Api.dropRequest(email); delete People.busy[email]; FX.burst(b, 18); HQ.toast(cap(name) + ' is in. Making a code.', null); await People.load(); People.getCode(email);
       }
       else if (act === 'deny') { People.busy[email] = true; People.draw(); await Api.dropRequest(email); delete People.busy[email]; await People.load(); }
       else if (act === 'role') { await Api.setRole(email, b.dataset.role); await People.load(); }
