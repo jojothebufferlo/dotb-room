@@ -280,6 +280,7 @@
           <ol class="lr-track" aria-label="The nine stops to launch, now at stage ${esc(stg.n)}">${pipe.map((s, i) => { const st = stOf(s.state), cur = i + 1 === Number(stg.n);
             return `<li class="lr-stop s-${st}${cur ? ' cur' : ''}" data-stop="${esc(s.key)}"${cur ? ' aria-current="step"' : ''}><span class="lr-node">${ico(st, (SHORT[s.key] || s.key) + ': ' + STATE[st] + (cur ? ', current stage' : ''))}</span><span class="sl">${esc(SHORT[s.key] || s.label)}</span>${cur ? '<span class="now">Now</span>' : ''}</li>`; }).join('')}</ol>
           ${blockerBox(l.blocker, now)}
+          ${window.RoomBuilds ? window.RoomBuilds.strip(l.id) : ''}
           <span class="lr-tracksum">${['failed', 'blocked', 'waiting', 'doing', 'done', 'todo'].filter(k => count[k]).map(k => `<span class="s-${k}">${ico(k)}${count[k]} ${STATE[k].toLowerCase()}</span>`).join('')}</span>
           ${open ? '' : `<ul class="lr-urgent">${urgent(l, pipe, openOrds, now)}</ul>`}
         </button>

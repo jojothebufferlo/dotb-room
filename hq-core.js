@@ -279,6 +279,7 @@
         ${t(g.at) != null ? `<span class="chip date">${ico('today')}${esc(sgtChip(g.at))}</span>` : '<span class="chip">No date</span>'}
         ${n != null ? `<div class="stage"><div class="steps" style="--of:${of}" aria-hidden="true">${Array.from({ length: of }, (_, i) => `<i class="${i < n - 1 ? 'd' : i === n - 1 ? 'c' : ''}"></i>`).join('')}</div><span class="st num">Step ${esc(n)} of ${esc(of)}</span></div>` : ''}
         ${status || fails ? `<div class="chips">${status}${fails ? `<span class="chip bad">${ico('fail')}${esc(fails)} failing</span>` : ''}</div>` : ''}
+        ${window.RoomBuilds ? window.RoomBuilds.strip(g.id) : ''}
       </div>
       <details class="det" data-fold="${esc(key)}"${open ? ' open' : ''}><summary class="deth">Details${ico('chev')}</summary>
         <div class="detb">${s.label ? `<p class="dl"><b>Step ${esc(n)}:</b> ${esc(s.label)}</p>` : ''}
@@ -691,7 +692,7 @@
     if (!window.LaunchRoom) { el.innerHTML = emptyBox('The launch room did not load', 'Its drawing code is missing from this page.', 'alert'); return; }
     if (waitingFirst()) { el.innerHTML = skel(3); lr = null; return; }
     if (!launches().length) { el.innerHTML = noDataBox(); lr = null; return; }
-    const ops = opsForLr(); const key = JSON.stringify([ops.generated_at, ops.launches.length, Object.keys(S.data.ops).length, ops.orders.length, (S.data.team._main || {}).generated_at]);
+    const ops = opsForLr(); const key = JSON.stringify([ops.generated_at, ops.launches.length, Object.keys(S.data.ops).length, ops.orders.length, (S.data.team._main || {}).generated_at, window.RoomBuilds ? window.RoomBuilds.rev : 0]);
     if (!lr) { el.innerHTML = ''; lr = window.LaunchRoom.mount(el, { partner: false, staleAfterMin: 150, sourceNote: '' }); S.lrSet = ''; }
     if (S.lrSet !== key) { lr.set(ops); S.lrSet = key; } else lr.tick();
   }

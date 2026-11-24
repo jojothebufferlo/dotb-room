@@ -338,10 +338,62 @@
   };
   document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.pfold) Partner.open[d.dataset.pfold] = d.open; }, true);
 
+  // Which build is where (room doc builds/_main, from tools/room-builds.js; partner games from partner/<team>).
+  // A strip on every game card and one list on the Launches tab. A missing value reads "Not known", never a guess.
+  const Builds = {
+    rev: 0, open: {},
+    all() { const d = D.docs['builds/_main']; return d && Array.isArray(d.games) ? d.games : null; },
+    get(id) { const g = this.all(); if (!g) return undefined; const n = String(id || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); return g.find(x => x.id === id) || g.find(x => (x.aliases || []).includes(n)) || null; },
+    partner() {
+      const out = [];
+      Object.keys(D.docs).filter(id => id.startsWith('partner/')).sort().forEach(id => { const P = D.docs[id] || {};
+        (Array.isArray(P.games) ? P.games : []).forEach(g => out.push({ id: id + ':' + g.name, name: g.name, kind: g.kind || '', studio: P.title || '', live: g.live || null, live_at: g.live_at || null, build: g.build || null, verdict: ['none', 'coo', 'owners'].includes(g.verdict) ? g.verdict : null, verdict_at: g.verdict_at || null, verdict_build: g.verdict_build || null, old: g.live_old === true || (!!g.live && !!g.build && String(g.live) !== String(g.build)) })); });
+      return out;
+    },
+    day(d) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? (+m[3]) + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+m[2] - 1] : ''; },
+    cells(g) {
+      const nk = '<span class="bv unk">Not known</span>';
+      const live = g.live ? `<span class="bv" title="${esc(g.live)}"><b>${esc(g.live)}</b>${g.live_at ? ' · ' + esc(this.day(g.live_at)) : ''}</span>` : nk;
+      const build = g.build ? `<span class="bv" title="${esc(g.build)}"><b>${esc(g.build)}</b></span>` : nk;
+      const vw = { none: 'None', coo: 'COO verdict', owners: 'Owners seen' }[g.verdict];
+      const vsub = [g.verdict_word, g.verdict_build ? 'on ' + g.verdict_build : '', this.day(g.verdict_at)].filter(Boolean).join(' · ');
+      const verdict = vw ? `<span class="bv">${esc(vw)}${vsub && g.verdict !== 'none' ? `<small> · ${esc(vsub)}</small>` : ''}</span>` : nk;
+      return `<span class="bstrip" role="group" aria-label="Which build is where">
+        <span class="bcell${g.old ? ' old' : ''}"><span class="bk">On platform now</span>${live}${g.old ? `<span class="btag">${ico('wait')}OLD</span>` : ''}</span>
+        <span class="bcell"><span class="bk">In the build</span>${build}</span>
+        <span class="bcell v-${esc(g.verdict || 'unk')}"><span class="bk">Verdict</span>${verdict}</span></span>`;
+    },
+    // '' until the builds doc has loaded; all "Not known" for a game the doc does not have
+    strip(id) { const g = this.get(id); return g === undefined ? '' : this.cells(g || {}); },
+    draw() {
+      const el = $('buildsBody'); if (!el) return;
+      const mine = this.all(); if (!mine) { el.innerHTML = ''; return; }
+      const games = mine.concat(this.partner());
+      const known = games.filter(g => g.old || g.live || g.verdict).sort((a, b) => (b.old - a.old) || ((a.verdict === 'none') - (b.verdict === 'none')) * -1 || String(a.name).localeCompare(String(b.name)));
+      const rest = games.filter(g => !(g.old || g.live || g.verdict)).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+      const nOld = games.filter(g => g.old).length, nNone = games.filter(g => g.verdict === 'none').length;
+      const row = g => `<article class="panel brow${g.old ? ' old' : ''}"><div class="brh"><b>${esc(g.name)}</b><span>${esc([cap(g.kind), g.studio].filter(Boolean).join(' · '))}</span></div>${this.cells(g)}</article>`;
+      const key = 'builds:rest';
+      el.innerHTML = `<section class="sec builds"><div class="eyebrow">Which build is where</div>
+        <div class="pstats">
+          <div class="pst ${nOld ? 'warn' : 'good'}"><b class="num">${esc(nOld)}</b><span>old on platform</span></div>
+          <div class="pst ${nNone ? 'warn' : ''}"><b class="num">${esc(nNone)}</b><span>no verdict</span></div>
+          <div class="pst"><b class="num">${esc(rest.length)}</b><span>not known</span></div>
+        </div>
+        ${known.map(row).join('')}
+        ${rest.length ? `<article class="panel pcard"><details class="fold" data-bfold="${key}"${this.open[key] ? ' open' : ''}><summary class="foldh"><span class="t"><b>Not known</b><span>No live revision on the card</span></span><span class="c"><span class="num">${esc(rest.length)}</span>${ico('chev')}</span></summary><div class="pfb">${rest.map(row).join('')}</div></details></article>` : ''}
+      </section>`;
+    },
+    // a builds or partner doc changed: redraw the list and every game card
+    bump(cols) { this.rev++; this.draw(); if (!cols || !cols.has('ops')) emit('ops'); },
+  };
+  window.RoomBuilds = Builds;
+  document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.bfold) Builds.open[d.dataset.bfold] = d.open; }, true);
+
   const Live = {
     last: 0, channel: null,
     async start() {
-      readCache(); const had = D.cached; if (had) Partner.draw();
+      readCache(); const had = D.cached; if (had) { Partner.draw(); Builds.draw(); }
       await this.all();
       if (!had) setTimeout(() => FX.afterTab(HQ.S.tab), 90);   // first cards rise in when they first arrive
       if (DEMO) return;
@@ -355,7 +407,7 @@
         const rows = await Api.docs(); const docs = {}, stamp = {};
         rows.forEach(r => { docs[r.id] = r.data; stamp[r.id] = r.updated_at; });
         D.docs = docs; D.stamp = stamp; await this.answers(true);
-        D.fresh = true; this.last = Date.now(); COLS.forEach(emit); emit('answers'); Partner.draw(); saveCache();
+        D.fresh = true; this.last = Date.now(); COLS.forEach(emit); emit('answers'); Partner.draw(); Builds.draw(); saveCache();
       } catch (e) { if (D.cached) { COLS.forEach(emit); emit('answers'); } HQ.S.err = HQ.S.err || null; setTimeout(() => this.all(), 8000); }
     },
     async answers(quiet) {
@@ -371,7 +423,7 @@
         Object.keys(D.docs).forEach(id => { if (!seen.has(id)) { delete D.docs[id]; delete D.stamp[id]; cols.add(id.split('/')[0]); } });
         if (want.length) (await Api.docsById(want)).forEach(r => { D.docs[r.id] = r.data; D.stamp[r.id] = r.updated_at; cols.add(r.id.split('/')[0]); });
         await this.answers(true); this.last = Date.now();
-        cols.forEach(c => { if (COLS.includes(c)) emit(c); }); emit('answers'); if (cols.has('partner')) Partner.draw(); saveCache();
+        cols.forEach(c => { if (COLS.includes(c)) emit(c); }); emit('answers'); if (cols.has('partner')) Partner.draw(); if (cols.has('partner') || cols.has('builds')) Builds.bump(cols); saveCache();
         Chat.catchUp();
       } catch (e) { /* the next tick tries again */ }
     },
@@ -382,7 +434,7 @@
         const rows = await Api.docsById(ids); const got = new Set(); const cols = new Set();
         rows.forEach(r => { got.add(r.id); D.docs[r.id] = r.data; D.stamp[r.id] = r.updated_at; cols.add(r.id.split('/')[0]); });
         ids.forEach(id => { if (!got.has(id) && D.docs[id]) { delete D.docs[id]; delete D.stamp[id]; cols.add(id.split('/')[0]); } });
-        Live.last = Date.now(); cols.forEach(c => { if (COLS.includes(c)) emit(c); }); if (cols.has('partner')) Partner.draw(); saveCache();
+        Live.last = Date.now(); cols.forEach(c => { if (COLS.includes(c)) emit(c); }); if (cols.has('partner')) Partner.draw(); if (cols.has('partner') || cols.has('builds')) Builds.bump(cols); saveCache();
       } catch (e) { /* delta() picks it up */ }
     }, 500),
     listen() {
